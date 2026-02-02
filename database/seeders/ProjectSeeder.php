@@ -41,6 +41,5 @@ class ProjectSeeder extends Seeder
             'end_date' => '2025-12-20',
         ]);
 
-        echo "\n --- PROJELER BASARIYLA EKLENDI! ---\n";
     }
 }

@@ -19,29 +19,62 @@ class UserSeeder extends Seeder
 
         // --- 1. ŞİRKET KULLANICILARI (Yazılım) ---
         if (isset($companies[0])) {
-            $u1 = User::create([
+            $companyOwner0 = User::create([
                 'name' => 'Ahmet Yılmaz',
                 'email' => 'ahmet@yazilim.com',
-                'password' => Hash::make('ahmet123'), // Özel Şifre
+                'password' => Hash::make('123'), // Özel Şifre
                 'company_id' => $companies[0]->id
             ]);
-            $u1->assignRole('Sirket Yoneticisi');
-
-            $u2 = User::create([
-                'name' => 'Mehmet Demir',
-                'email' => 'mehmet@yazilim.com',
-                'password' => Hash::make('mehmet456'), // Özel Şifre
+            $companyOwner0->assignRole('Sirket Yoneticisi');
+            
+            $operationManager0 = User::create([
+                'name' => 'Selin Arslan',
+                'email' => 'selin@yazilim.com',
+                'password' => Hash::make('123'), // Özel Şifre
                 'company_id' => $companies[0]->id
             ]);
-            $u2->assignRole('Personel');
+            $operationManager0->assignRole('Operasyon Yoneticisi');
 
-            $admin = User::create([
+            $projectManager0 = User::create([
                 'name' => 'Ömer Yılmaz',
                 'email' => 'omer@yazilim.com',
-                'password' => Hash::make('1234'), // Özel Şifre
+                'password' => Hash::make('123'), // Özel Şifre
                 'company_id' => $companies[0]->id
             ]);
-            $admin->assignRole('Proje Yoneticisi');
+            $projectManager0->assignRole('Proje Yoneticisi');
+
+            $teamLead0 = User::create([
+                'name' => 'Buse Çelik',
+                'email' => 'buse@yazilim.com',
+                'password' => Hash::make('123'), // Özel Şifre
+                'company_id' => $companies[0]->id
+            ]);
+            $teamLead0->assignRole('Takim Lideri');
+
+            $employee0 = User::create([
+                'name' => 'Mehmet Demir',
+                'email' => 'mehmet@yazilim.com',
+                'password' => Hash::make('123'), // Özel Şifre
+                'company_id' => $companies[0]->id
+            ]);
+            $employee0->assignRole('Personel');
+
+            $financeOfficer0 = User::create([
+                'name' => 'Sude Korkmaz',
+                'email' => 'sude@yazilim.com',
+                'password' => Hash::make('123'), // Özel Şifre
+                'company_id' => $companies[0]->id
+            ]);
+            $financeOfficer0->assignRole('Finans Görevlisi');
+
+            $client0 = User::create([
+                'name' => 'Ece Arı',
+                'email' => 'ece@yazilim.com',
+                'password' => Hash::make('123'), // Özel Şifre
+                'company_id' => $companies[0]->id
+            ]);
+            $client0->assignRole('Musteri');
+
         }
 
         // --- 2. ŞİRKET KULLANICILARI (İnşaat) ---

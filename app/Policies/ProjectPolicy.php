@@ -14,7 +14,7 @@ class ProjectPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->can('proje görüntüle');
+        return $user->can('proje.goruntule');
     }
 
     /**
@@ -22,15 +22,15 @@ class ProjectPolicy
      */
     public function view(User $user, Project $project): bool
     {
-        return $user->can('proje görüntüle') && $user->company_id === $project->company_id;
-    }
+        return $user->company_id === $project->company_id
+            && $user->hasProjectAbility($project, 'project.view');    }
 
     /**
      * Determine whether the user can create models.
      */
     public function create(User $user): bool
     {
-        return $user->can('proje oluştur');
+        return $user->can('proje.ekle');
     }
 
     /**
@@ -38,7 +38,14 @@ class ProjectPolicy
      */
     public function update(User $user, Project $project): bool
     {
-        return $user->can('proje düzenle') && $user->company_id === $project->company_id;
+        // Global yetkisi olanlar veya o projede manager rolünde olanlar düzenleyebilir
+        $isProjectManager = \App\Models\ProjectUserRole::where('project_id', $project->id)
+            ->where('user_id', $user->id)
+            ->where('role', 'manager')
+            ->exists();
+
+            return $user->company_id === $project->company_id
+                && $user->hasProjectAbility($project, 'project.update   ');
     }
 
     /**
@@ -46,7 +53,7 @@ class ProjectPolicy
      */
     public function delete(User $user, Project $project): bool
     {
-        return $user->can('proje sil') && $user->company_id === $project->company_id;
+        return $user->can('proje.sil') && $user->company_id === $project->company_id;
     }
 
     /**
@@ -67,7 +74,7 @@ class ProjectPolicy
 
     public function assignStaff(User $user, Project $project): bool
     {
-        return $user->can('projeye personel ata') && $user->company_id === $project->company_id;
+        return $user->can('projeye.personel.ata') && $user->company_id === $project->company_id;
     }
 
 

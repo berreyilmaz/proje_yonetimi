@@ -2,59 +2,140 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ProfileUpdateRequest;
-use Illuminate\Http\RedirectResponse;
+use App\Models\User;
+use Spatie\Permission\Models\Role;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Redirect;
-use Illuminate\View\View;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\Gate;
 
 class ProfileController extends Controller
 {
+    use AuthorizesRequests; // authorize() metodunu kullanabilmek için
+
     /**
-     * Display the user's profile form.
+     * Şirkete ait tüm kullanıcıları listeler.
      */
-    public function edit(Request $request): View
+    public function index()
     {
-        return view('profile.edit', [
-            'user' => $request->user(),
-        ]);
+        // UserPolicy@viewAny metoduna bakar
+        Gate::authorize('viewAny', User::class);
+
+        $user = Auth::user();
+        
+        // Sadece giriş yapan yöneticinin şirketindeki kullanıcıları getirir
+        $users = User::where('company_id', $user->company_id)->get();
+        
+        return view('users.index', compact('users', 'user'));
     }
 
     /**
-     * Update the user's profile information.
+     * Yeni kullanıcı oluşturma formu.
      */
-    public function update(ProfileUpdateRequest $request): RedirectResponse
+    public function create()
     {
-        $request->user()->fill($request->validated());
+        Gate::authorize('create', User::class);
+        
+        $user = Auth::user();
+        $roles = Role::pluck('name'); 
 
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
+        return view('create', compact('roles', 'user'));
+    }
+
+    /**
+     * Yeni kullanıcıyı kaydeder.
+     */
+    public function store(Request $request)
+    {
+        Gate::authorize('create', User::class);
+
+        $validated = $request->validate([
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'role'     => 'nullable|string|exists:roles,name',
+        ]);
+
+        $validated['password'] = Hash::make($request->password);
+        $validated['company_id'] = Auth::user()->company_id;
+
+        $newUser = User::create($validated);
+
+        if ($request->filled('role')) {
+            $newUser->assignRole($request->role);
         }
 
-        $request->user()->save();
-
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'Kullanıcı başarıyla oluşturuldu.');
     }
 
     /**
-     * Delete the user's account.
+     * Kullanıcı düzenleme sayfası.
      */
-    public function destroy(Request $request): RedirectResponse
+    public function editUser($id) 
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
+        $userToEdit = User::findOrFail($id);
+
+        // UserPolicy@update metoduna bakar (Parametre olarak modeli gönderiyoruz)
+        Gate::authorize('update', $userToEdit);
+
+        $user = Auth::user(); // Sidebar/Layout için
+        $roles = Role::pluck('name'); 
+
+        return view('users.edit', compact('userToEdit', 'user', 'roles'));
+    }
+
+    /**
+     * Kullanıcıyı günceller.
+     */
+    public function updateUser(Request $request, $id)
+    {
+        $userToUpdate = User::findOrFail($id);
+
+        // Yetki kontrolü
+        Gate::authorize('update', $userToUpdate);
+
+        $validated = $request->validate([
+            'name'  => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email,' . $userToUpdate->id,
+            'role'  => 'nullable|string|exists:roles,name',
+            'password' => 'nullable|string|min:8',
         ]);
 
-        $user = $request->user();
+        $userToUpdate->update([
+            'name'  => $validated['name'],
+            'email' => $validated['email'],
+        ]);
 
-        Auth::logout();
+        if ($request->filled('password')) {
+            $userToUpdate->update(['password' => Hash::make($request->password)]);
+        }
 
-        $user->delete();
+        if ($request->filled('role')) {
+            $userToUpdate->syncRoles($request->role);
+        }
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'Kullanıcı bilgileri güncellendi.');
+    }
 
-        return Redirect::to('/');
+    /**
+     * Kullanıcıyı siler.
+     */
+    public function destroy($id)
+    {
+        $userToDelete = User::findOrFail($id);
+
+        // Gate: UserPolicy@delete metoduna bakar
+        // Kural: Yönetici olacak, aynı şirkette olacak ve KENDİSİNİ silemeyecek
+        $this->authorize('delete', $userToDelete);
+
+        $userToDelete->delete();
+
+        return back()->with('success', 'Kullanıcı başarıyla silindi.');
     }
 }

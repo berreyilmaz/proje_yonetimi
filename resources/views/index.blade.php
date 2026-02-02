@@ -10,7 +10,7 @@
     
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #F8F9FD; }
-        .sidebar-active { background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%); color: white; shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.4); }
+        .sidebar-active { background: linear-gradient(135deg, #A855F7 0%, #7E22CE 100%); color: white; box-shadow: 0 10px 15px -3px rgba(168, 85, 247, 0.4); }
         .custom-shadow { box-shadow: 0 10px 40px -10px rgba(0,0,0,0.05); }
     </style>
 </head>
@@ -34,7 +34,7 @@
                 <span class="font-semibold">Panel</span>
             </a>
             
-            <a href="#" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
+            <a href="{{ route('tasks.index') }}" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
                 <i class="fas fa-list-check w-5"></i> 
                 <span class="font-medium">Görevlerim</span>
             </a>
@@ -48,8 +48,33 @@
                 <i class="fas fa-calendar-alt w-5"></i> 
                 <span class="font-medium">Takvim</span>
             </a>
+            @role('Finans Gorevlisi')
+            <a href="{{ route('finans.index') }}" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
+                <i class="fas fa-wallet w-5"></i> 
+                <span class="font-medium">Finans</span>
+            </a>
+            @endrole
+            @role('Sirket Yoneticisi')
+            <a href="{{ route('users.index') }}" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
+                <i class="fas fa-users w-5"></i> 
+                <span class="font-medium">Kullanıcılar</span>
+            </a>
+            @endrole
         </nav>
 
+        @role('Sirket Yoneticisi')
+        <div class="mt-auto pt-10">
+            <a href="{{ route('yenikullanici.create') }}" 
+            class="flex items-center gap-1 p-4 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-2xl transition-all group">
+                
+                <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all">
+                    <i class="fas fa-user-plus"></i>
+                </div>
+
+                <span class="font-semibold">Yeni Kullanıcı Ekle</span>
+            </a>
+        </div>
+        @endrole
         <div class="mt-auto pt-10">
             <a href="#" 
             onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
@@ -97,41 +122,43 @@
                 </div>
                 <i class="fas fa-clock absolute -right-6 -bottom-6 text-white opacity-10 text-[140px] group-hover:scale-110 transition-transform"></i>
             </div>
-
+            
             <div class="bg-white p-8 rounded-[40px] custom-shadow border border-gray-50 flex flex-col justify-between">
-                <span class="text-gray-400 font-bold text-xs uppercase tracking-widest">Ekip Üyeleri</span>
+                <div>
+                    <span class="text-gray-400 font-bold text-xs uppercase tracking-widest">Ekip Üyeleri</span>
                 
-                <div class="flex -space-x-3 my-4">
-                {{-- Sadece ilk 2 üyeyi gösteriyoruz (Tasarımın bozulmaması için) --}}
-                @foreach($teamMembers->take(2) as $member)
-                    <img src="https://ui-avatars.com/api/?name={{ urlencode($member->name) }}&background=random" 
-                        class="w-12 h-12 rounded-full border-4 border-white shadow-sm" 
-                        title="{{ $member->name }}">
-                @endforeach
+                    <div class="flex -space-x-3 my-4">
+                        {{-- Sadece ilk 2 üyeyi gösteriyoruz (Tasarımın bozulmaması için) --}}
+                        @foreach($teamMembers->take(2) as $member)
+                            <img src="https://ui-avatars.com/api/?name={{ urlencode($member->name) }}&background=random" 
+                                class="w-12 h-12 rounded-full border-4 border-white shadow-sm" 
+                                title="{{ $member->name }}">
+                        @endforeach
 
-                {{-- Eğer toplam üye sayısı 2'den fazlaysa, geri kalanı +X olarak göster --}}
-                @if($teamCount > 2)
-                    <div class="w-12 h-12 rounded-full border-4 border-white bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
-                        +{{ $teamCount - 2 }}
+                        {{-- Eğer toplam üye sayısı 2'den fazlaysa, geri kalanı +X olarak göster --}}
+                        @if($teamCount > 2)
+                            <div class="w-12 h-12 rounded-full border-4 border-white bg-gray-50 flex items-center justify-center text-xs font-bold text-gray-500 shadow-sm">
+                            +{{ $teamCount - 2 }}
+                            </div>
+                        @endif
                     </div>
-                @endif
-            </div>
+                </div>
                 <div class="flex flex-col">
                     <span class="text-3xl font-bold text-gray-800">{{ $personalHours }}</span>
                     <span class="text-sm font-medium text-gray-400 uppercase tracking-tighter">Haftalık Çalışma Saatin</span>
                 </div>
             </div>
+        
         </div>
-
-        <div class="flex justify-between items-center mb-6">
-        <h3 class="text-2xl font-bold text-gray-800">Son Görevler</h3>
+    <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-gray-800">Son Projeler</h3>
         <a href="{{ route('projects.index') }}" class="text-purple-600 font-bold text-sm hover:underline">Hepsini Gör</a>
     </div>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         @forelse($continuingProjects as $project)
             @php
-                // Sırayla mor ve turuncu gitmesi için (tek sayılar mor, çift sayılar turuncu)
+            // Sırayla mor ve turuncu gitmesi için (tek sayılar mor, çift sayılar turuncu)
                 $isPurple = $loop->iteration % 2 != 0; 
                 
                 $deadline = $project->end_date ? \Illuminate\Support\Carbon::parse($project->end_date) : null;
@@ -143,14 +170,14 @@
                 <div class="flex justify-between items-start mb-6">
                     <span class="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider {{ $isPurple ? 'bg-purple-50 text-purple-600' : 'bg-orange-50 text-orange-600' }}">
                         @if($daysLeft !== null)
-                            @if($daysLeft > 0)
+                        @if($daysLeft > 0)
                                 {{ $daysLeft }} GÜN KALDI
                             @elseif($daysLeft == 0)
                                 BUGÜN SON GÜN
                             @else
-                                SÜRESİ DOLDU
+                            SÜRESİ DOLDU
                             @endif
-                        @else
+                            @else
                             TARİH BELİRTİLMEDİ
                         @endif
                     </span>
@@ -179,12 +206,12 @@
                 </div>
             </div>
         @empty
-            <div class="col-span-2 text-center p-20 bg-white rounded-[40px] text-gray-400 border-2 border-dashed border-gray-100">
-                <i class="fas fa-tasks text-3xl mb-4 block opacity-20"></i>
-                <p class="font-bold">Henüz devam eden bir görev bulunamadı.</p>
+        <div class="col-span-2 text-center p-20 bg-white rounded-[40px] text-gray-400 border-2 border-dashed border-gray-100">
+            <i class="fas fa-tasks text-3xl mb-4 block opacity-20"></i>
+            <p class="font-bold">Henüz devam eden bir görev bulunamadı.</p>
             </div>
-        @endforelse
-    </div>
+            @endforelse
+        </div>
         
     </main>
 
@@ -220,8 +247,8 @@
         <span>Pzt</span><span>Sal</span><span>Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span>
         
         @for($i = 0; $i < 7; $i++)
-            @php 
-                $date = $startOfWeek->copy()->addDays($i); 
+        @php 
+        $date = $startOfWeek->copy()->addDays($i); 
             @endphp
             
             @if($date->isToday())
@@ -252,7 +279,7 @@
                     <span class="text-[10px] text-gray-300 font-bold">15:18</span>
                 </div>
                 </div>
-        </div>
+            </div>
     </aside>
 
 </body>
@@ -274,7 +301,7 @@
         let secs = totalSeconds % 60;
         display.textContent = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
-
+    
     startBtn.addEventListener('click', function() {
         if (!isRunning) {
             isRunning = true;
@@ -295,7 +322,7 @@
 
     saveBtn.addEventListener('click', function() {
         if (totalSeconds < 1) return alert("Kaydedilecek bir süre yok!");
-
+        
         // Gönderirken butonu pasif yap ki çift kayıt olmasın
         saveBtn.disabled = true;
 

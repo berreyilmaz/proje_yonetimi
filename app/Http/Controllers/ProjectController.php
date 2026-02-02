@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // 1. Bunu ekle
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Permission\Models\Role;
 
 
 class ProjectController extends Controller
@@ -42,6 +43,8 @@ class ProjectController extends Controller
         // 4. Devam Eden Projeler (Dashboard'daki görev kartları için)
         $continuingProjects = Project::where('company_id', $companyId)
             ->where('status', 'devam_ediyor')
+            ->latest()   // created_at desc
+            ->take(2)
             ->get();
 
         // 5. Ekip Üyeleri (Sadece aynı şirkettekiler)
@@ -52,7 +55,14 @@ class ProjectController extends Controller
         $teamCount = User::where('company_id', $companyId)->count();
 
         // 6. Blade'in beklediği ek değişkenler (Hata veren kısımlar)
-        $personalHours = "38s 15dk"; 
+        // Kullanıcının bu haftaki toplam saniyesi
+        $seconds = (int) $user->weekly_work_hours;
+
+        $hours = intdiv($seconds, 3600);
+        $minutes = intdiv($seconds % 3600, 60);
+
+        // Örn: "5 sa 30 dk"
+        $personalHours = $hours . ' sa ' . $minutes . ' dk'; 
         $currentDate = now();
         $startOfWeek = now()->startOfWeek();
 
@@ -65,7 +75,7 @@ class ProjectController extends Controller
             'teamCount',
             'personalHours',
             'currentDate',
-            'startOfWeek'
+            'startOfWeek',
         ));
     }
 
@@ -98,35 +108,50 @@ class ProjectController extends Controller
     {
         Gate::authorize('create', Project::class);
         $user = Auth::user(); // Sidebar için
-        return view('projects.create', compact('user'));
+
+        // Aynı şirketteki proje yöneticileri
+        $employees = User::where('company_id', $user->company_id)->get();
+
+        return view('projects.create', compact('user', 'employees'));
     }
 
     public function store(Request $request)
     {
-            // 1️⃣ Yetki kontrolü
         Gate::authorize('create', Project::class);
 
-        // 2️⃣ Validasyon
         $validated = $request->validate([
-            'title' => 'required|max:255',
-            'status' => 'required',
-            'progress' => 'required|integer|min:0|max:100',
-            'end_date' => 'nullable|date',
+            'title'   => 'required|max:255',
+            'status'  => 'required',
+            'progress'=> 'nullable|integer|min:0|max:100',
+            'end_date'=> 'nullable|date',
+            'project_manager_id' => 'nullable|exists:users,id',
         ]);
 
-        // 3️⃣ Status map
         $statusMap = [
             'continuing' => 'devam_ediyor',
             'completed'  => 'tamamlandi',
         ];
 
-        // 4️⃣ Güvenli alanlar
         $validated['status'] = $statusMap[$request->status] ?? 'devam_ediyor';
-        $validated['company_id'] = Auth::user()->company_id; // 🔥 KRİTİK
+        $validated['company_id'] = Auth::user()->company_id;
         $validated['start_date'] = now();
+        $validated['project_manager_id'] = $request->project_manager_id;
 
-        // 5️⃣ Kayıt
-        Project::create($validated);
+        // SADECE BİR KEZ OLUŞTUR
+        $project = Project::create($validated);
+
+        // Proje bazlı manager rolü ata
+        if ($request->filled('project_manager_id')) {
+            \App\Models\ProjectUserRole::updateOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'user_id'    => $request->project_manager_id,
+                ],
+                [
+                    'role'       => 'manager',
+                ]
+            );
+        }
 
         return redirect()
             ->route('projects.index')
@@ -136,29 +161,47 @@ class ProjectController extends Controller
     public function edit(Project $project)
     {
         Gate::authorize('update', $project);
-        $user = Auth::user(); // Sidebar ve header için
-        return view('projects.edit', compact('project', 'user'));
-    }
+        $user = Auth::user();
 
+        $employees = User::where('company_id', $user->company_id)->get();
+
+        return view('projects.edit', compact('project', 'user', 'employees'));
+    }
     public function update(Request $request, Project $project)
     {
         Gate::authorize('update', $project);
         $validated = $request->validate([
-            'title' => 'required|max:255',
-            'status' => 'required',
-            'progress' => 'required|integer|min:0|max:100',
-            'end_date' => 'nullable|date',
+            'title'   => 'required|max:255',
+            'status'  => 'required',
+            'progress'=> 'required|integer|min:0|max:100',
+            'end_date'=> 'nullable|date',
+            'project_manager_id' => 'nullable|exists:users,id',
         ]);
-
-        // Veritabanı formatına dönüştürme (İstersen Blade'den de yapabilirsin)
+        
         $statusMap = [
             'continuing' => 'devam_ediyor',
             'completed'  => 'tamamlandi'
         ];
         $validated['status'] = $statusMap[$request->status] ?? $request->status;
-
+        $validated['project_manager_id'] = $request->project_manager_id;
+        
         $project->update($validated);
 
+        \App\Models\ProjectUserRole::where('project_id', $project->id)
+        ->where('role', 'manager')
+        ->delete();
+
+        if ($request->filled('project_manager_id')) {
+            \App\Models\ProjectUserRole::updateOrCreate(
+                [
+                    'project_id' => $project->id,
+                    'user_id'    => $request->project_manager_id,
+                ],
+                [
+                    'role'       => 'manager',
+                ]
+            );
+        }
         return redirect()->route('projects.index')->with('success', 'Proje başarıyla güncellendi.');
     }
 

@@ -39,6 +39,7 @@
                         <th class="p-6 text-xs font-bold uppercase text-gray-400 tracking-widest">Proje Adı</th>
                         <th class="p-6 text-xs font-bold uppercase text-gray-400 tracking-widest">Durum</th>
                         <th class="p-6 text-xs font-bold uppercase text-gray-400 tracking-widest">İlerleme</th>
+                        <th class="p-6 text-xs font-bold uppercase text-gray-400 tracking-widest">Proje Yöneticisi</th>
                         <th class="p-6 text-xs font-bold uppercase text-gray-400 tracking-widest text-right">İşlemler</th>
                     </tr>
                 </thead>
@@ -60,6 +61,11 @@
                                 </div>
                                 <span class="text-xs font-bold text-gray-500">%{{ $project->progress }}</span>
                             </div>
+                        </td>
+                        <td class="p-6">
+                            <span class="text-sm text-gray-700">
+                                {{ $project->manager->name ?? '-' }}
+                            </span>
                         </td>
                         <td class="p-6 text-right">
                             <div class="flex justify-end gap-2">

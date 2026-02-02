@@ -23,6 +23,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'company_id',
     ];
 
     /**
@@ -50,5 +51,43 @@ class User extends Authenticatable
 
     public function company() {
         return $this->belongsTo(Company::class);
+    }
+
+    public function projectRoles()
+    {
+        return $this->hasMany(ProjectUserRole::class);
+    }
+
+    public function projects()
+    {
+        return $this->belongsToMany(Project::class, 'project_user_roles')
+                    ->withPivot('role')
+                    ->withTimestamps();
+    }
+
+    public function projectRole(\App\Models\Project $project): ?string
+    {
+        return \App\Models\ProjectUserRole::where('project_id', $project->id)
+            ->where('user_id', $this->id)
+            ->value('role');
+    }
+
+    public function hasProjectAbility(\App\Models\Project $project, string $ability): bool
+    {
+        $role = $this->projectRole($project);
+        if (!$role) return false;
+
+        $allowedRoles = config("project_roles.abilities.$ability", []);
+        return in_array($role, $allowedRoles, true);
+    }
+
+    public function tasksAssigned()
+    {
+        return $this->hasMany(\App\Models\Task::class, 'assigned_to');
+    }
+
+    public function finansPayments()
+    {
+        return $this->hasMany(\App\Models\Finans::class);
     }
 }

@@ -34,6 +34,21 @@
                         </select>
                     </div>
                     <div>
+                        <label class="block text-xs font-bold uppercase text-gray-400 tracking-widest mb-3">
+                            Proje Yöneticisi
+                        </label>
+                        <select name="project_manager_id"
+                                class="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 focus:ring-2 focus:ring-purple-100 outline-none appearance-none">
+                            <option value="">Seçilmedi</option>
+                            @foreach($employees as $employee)
+                                <option value="{{ $employee->id }}"
+                                    @selected($project->project_manager_id == $employee->id)>
+                                    {{ $employee->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
                         <label class="block text-xs font-bold uppercase text-gray-400 tracking-widest mb-3">İlerleme (%)</label>
                         <input type="number" name="progress" min="0" max="100" value="{{ $project->progress }}"
                                class="w-full bg-gray-50 border-none rounded-2xl py-4 px-6 focus:ring-2 focus:ring-purple-100 outline-none">
