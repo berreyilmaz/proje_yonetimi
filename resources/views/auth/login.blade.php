@@ -42,7 +42,7 @@
                     class="w-full px-4 py-3 rounded-lg border border-slate-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-400"
                     placeholder="••••••••"> 
                     
-                    <a href="#" class="text-xs text-blue-600 hover:underline">Şifremi Unuttum</a>
+                    <a href="{{ route('password.request') }}" class="text-xs text-blue-600 hover:underline">Şifremi Unuttum</a>
                 </div>
 
                 @if($errors->any())
