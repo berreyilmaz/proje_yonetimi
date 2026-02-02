@@ -13,6 +13,8 @@ use App\Http\Controllers\FinansController;
 use Spatie\Permission\Middleware\RoleMiddleware;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\CalendarController;
 
 
 /*
@@ -118,3 +120,18 @@ Route::get('forgot-password', [ForgotPasswordController::class, 'showLinkRequest
 Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
 Route::get('reset-password/{token}', [ForgotPasswordController::class, 'showResetForm'])->name('password.reset');
 Route::post('reset-password', [ForgotPasswordController::class, 'reset'])->name('password.update');
+
+
+Route::middleware(['auth'])->group(function () {
+    // Mesajlar ana sayfası (Genel Chat)
+    Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+    
+    // Özel mesaj detay sayfası
+    Route::get('/messages/{user}', [MessageController::class, 'show'])->name('messages.show');
+    
+    // Mesaj gönderme işlemi
+    Route::post('/messages', [MessageController::class, 'store'])->name('messages.store');
+});
+
+Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
+Route::post('/calendar/event', [CalendarController::class, 'store'])->name('calendar.store');

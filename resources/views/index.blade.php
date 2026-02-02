@@ -44,7 +44,7 @@
                 <span class="font-medium">Projeler</span>
             </a>
 
-            <a href="#" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
+            <a href="{{ route('calendar.index') }}" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
                 <i class="fas fa-calendar-alt w-5"></i> 
                 <span class="font-medium">Takvim</span>
             </a>
@@ -215,73 +215,116 @@
         
     </main>
 
-    <aside class="w-80 bg-white border-l border-gray-100 p-8 flex flex-col">
-        <div class="bg-gray-50 rounded-[40px] p-8 mb-10 text-center custom-shadow">
-    <div class="flex justify-between text-gray-400 mb-6 text-xs font-bold uppercase tracking-widest">
-        <span>Zamanlayıcı</span>
-        <i class="fas fa-ellipsis-v"></i>
-    </div>
-    <div class="text-4xl font-black text-gray-800 mb-8 tracking-tighter italic" id="timerDisplay">
-    00:00:00
-</div>
-
-<div class="flex justify-center gap-5">
-        <button id="saveBtn" class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center hover:bg-orange-200 transition-all">
-            <i class="fas fa-save"></i> </button>
+    <aside class="w-80 bg-white border-l border-gray-100 flex flex-col h-full overflow-hidden">
+    <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
         
-        <button id="startBtn" class="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-200 hover:scale-110 transition-all">
-            <i class="fas fa-play text-xs" id="playIcon"></i>
-        </button>
-    </div>
-</div>
-
-<div class="mb-10">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="font-bold text-lg">{{ $currentDate->translatedFormat('F Y') }}</h3>
-        <div class="flex gap-2">
-            <button class="p-1 text-gray-300"><i class="fas fa-chevron-left text-xs"></i></button>
-            <button class="p-1 text-gray-800"><i class="fas fa-chevron-right text-xs"></i></button>
+        <div class="bg-gray-50 rounded-[40px] p-8 text-center custom-shadow border border-gray-50">
+            <div class="flex justify-between text-gray-400 mb-6 text-[10px] font-bold uppercase tracking-widest">
+                <span>Zamanlayıcı</span>
+                <i class="fas fa-ellipsis-v"></i>
+            </div>
+            <div class="text-4xl font-black text-gray-800 mb-8 tracking-tighter italic" id="timerDisplay">
+                00:00:00
+            </div>
+            <div class="flex justify-center gap-5">
+                <button id="saveBtn" class="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center hover:bg-orange-200 transition-all">
+                    <i class="fas fa-save"></i>
+                </button>
+                <button id="startBtn" class="w-12 h-12 rounded-full bg-purple-600 text-white flex items-center justify-center shadow-lg shadow-purple-200 hover:scale-110 transition-all">
+                    <i class="fas fa-play text-xs" id="playIcon"></i>
+                </button>
+            </div>
         </div>
-    </div>
-    <div class="grid grid-cols-7 gap-y-4 text-center text-xs font-semibold text-gray-400">
-        <span>Pzt</span><span>Sal</span><span>Çar</span><span>Per</span><span>Cum</span><span>Cmt</span><span>Paz</span>
-        
-        @for($i = 0; $i < 7; $i++)
-        @php 
-        $date = $startOfWeek->copy()->addDays($i); 
-            @endphp
+
+        <div class="min-h-[280px]">
+            <div class="flex justify-between items-center mb-6">
+                <h3 class="font-bold text-lg text-gray-800 tracking-tight">{{ $currentDate->translatedFormat('F Y') }}</h3>
+                <div class="flex gap-2">
+                    <button class="p-1 text-gray-300 hover:text-purple-600 transition-all"><i class="fas fa-chevron-left text-xs"></i></button>
+                    <button class="p-1 text-gray-800 hover:text-purple-600 transition-all"><i class="fas fa-chevron-right text-xs"></i></button>
+                </div>
+            </div>
             
-            @if($date->isToday())
-                <span class="bg-purple-600 text-white w-6 h-6 flex items-center justify-center rounded-full mx-auto">
-                    {{ $date->day }}
-                </span>
-            @else
-                <span class="text-gray-800 flex items-center justify-center h-6">
-                    {{ $date->day }}
-                </span>
-            @endif
-        @endfor
-    </div>
-</div>
+            <div class="grid grid-cols-7 gap-y-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">
+                <span>Pz</span><span>Sa</span><span>Ça</span><span>Pe</span><span>Cu</span><span>Ct</span><span>Pa</span>
+            </div>
+
+            <div class="grid grid-cols-7 gap-y-2 text-center text-xs font-semibold">
+                @php
+                    $startOfMonth = $currentDate->copy()->startOfMonth();
+                    $endOfMonth = $currentDate->copy()->endOfMonth();
+                    $startDayOfWeek = $startOfMonth->dayOfWeekIso;
+                    for ($i = 1; $i < $startDayOfWeek; $i++) {
+                        echo '<span class="text-transparent">00</span>';
+                    }
+                    $dayCounter = $startOfMonth->copy();
+                @endphp
+
+                @while ($dayCounter <= $endOfMonth)
+                    <div class="flex items-center justify-center h-8">
+                        @if($dayCounter->isToday())
+                            <span class="bg-purple-600 text-white w-7 h-7 flex items-center justify-center rounded-full shadow-lg shadow-purple-200">
+                                {{ $dayCounter->day }}
+                            </span>
+                        @else
+                            <span class="text-gray-700 hover:bg-purple-50 hover:text-purple-600 w-7 h-7 flex items-center justify-center rounded-lg transition-all">
+                                {{ $dayCounter->day }}
+                            </span>
+                        @endif
+                    </div>
+                    @php $dayCounter->addDay(); @endphp
+                @endwhile
+            </div>
+        </div>
 
         <div>
             <div class="flex justify-between items-center mb-6">
-                <h3 class="font-bold text-lg">Mesajlar</h3>
-                <button class="text-purple-600 text-xs font-bold">Hepsini Gör</button>
+                <h3 class="font-bold text-lg text-gray-800 tracking-tight">Mesajlar</h3>
+                <a href="{{ route('messages.index') }}" class="text-purple-600 text-xs font-bold hover:underline">Hepsini Gör</a>
             </div>
-            <div class="space-y-6">
-                <div class="flex items-center gap-4">
-                    <img src="https://ui-avatars.com/api/?name=Ahmet+Yilmaz" class="w-10 h-10 rounded-full">
-                    <div class="flex-1">
-                        <h4 class="text-sm font-bold">Ahmet Yılmaz</h4>
-                        <p class="text-xs text-gray-400 truncate w-32">Dosyaları gönderdim...</p>
-                    </div>
-                    <span class="text-[10px] text-gray-300 font-bold">15:18</span>
-                </div>
-                </div>
-            </div>
-    </aside>
 
+            <div class="space-y-4">
+                <a href="{{ route('messages.index') }}" class="flex items-center gap-4 p-4 rounded-[24px] bg-purple-50 border border-purple-100 group hover:bg-purple-600 transition-all">
+                    <div class="w-10 h-10 bg-purple-600 text-white rounded-xl flex items-center justify-center group-hover:bg-white group-hover:text-purple-600 shadow-lg shadow-purple-100">
+                        <i class="fas fa-users text-sm"></i>
+                    </div>
+                    <div class="flex-1">
+                        <h4 class="text-sm font-bold text-purple-900 group-hover:text-white transition-all">Genel Sohbet</h4>
+                        <p class="text-[10px] text-purple-400 group-hover:text-purple-200 uppercase font-black tracking-widest">Tüm Ekip</p>
+                    </div>
+                </a>
+
+                <div class="pt-2 space-y-4">
+                    <p class="text-[10px] text-gray-400 font-bold uppercase tracking-[2px] mb-2 px-1">Kişiler</p>
+                    @foreach($teamMembers->take(10) as $member)
+                        <a href="{{ route('messages.show', $member->id) }}" class="flex items-center gap-4 group hover:bg-gray-50 p-2 rounded-2xl transition-all">
+                            <div class="relative">
+                                <img src="https://ui-avatars.com/api/?name={{ urlencode($member->name) }}&background=random" class="w-11 h-11 rounded-full border-2 border-white shadow-sm">
+                                <div class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-bold text-gray-800 group-hover:text-purple-600 truncate transition-all">{{ $member->name }}</h4>
+                                <p class="text-xs text-gray-400 truncate">Mesajın önizlemesi...</p>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<style>
+    /* Sağdaki çirkin kaydırma çubuğunu gizle ama kaydırma özelliğini koru */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+    /* Firefox için */
+    .custom-scrollbar {
+        scrollbar-width: none;
+    }
+</style>
 </body>
 </html>
 
