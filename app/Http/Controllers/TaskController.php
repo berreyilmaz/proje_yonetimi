@@ -62,7 +62,7 @@ class TaskController extends Controller
         ]);
 
         // Kaydı oluştur
-        Task::create([
+        $task = Task::create([
             'title'       => $request->title,
             'project_id'  => $request->project_id,
             'assigned_to' => $request->assigned_to,
@@ -70,7 +70,15 @@ class TaskController extends Controller
             'company_id'  => Auth::user()->company_id, // Kullanıcının şirketini otomatik ekle
         ]);
 
+        if ($task->project) {
+            $task->project->updateProgress();
+        }
+    
+        $project = Project::find($request->project_id);
+        // Projenin toplam giderine sadece bu görevden doğan EK maliyeti (mesaiyi) ekle
+        $project->increment('total_expense', $request->calculated_cost);
         return redirect()->route('tasks.index')->with('success', 'Görev başarıyla eklendi!');
+
     }
 
     // Görev düzenleme formu
@@ -86,6 +94,7 @@ class TaskController extends Controller
         $employees = User::where('company_id', $user->company_id)->get();
 
         return view('tasks.edit', compact('task', 'projects', 'employees'));
+        
     }
 
     // Görev güncelleme
@@ -107,8 +116,13 @@ class TaskController extends Controller
             'status'      => $request->status,
         ]);
 
-        return redirect()->route('tasks.index')->with('success', 'Görev başarıyla güncellendi!');
-    }
+        if ($task->project) {
+            $task->project->updateProgress();
+        }
+
+            return redirect()->route('tasks.index')->with('success', 'Görev başarıyla güncellendi!');
+
+        }
 
     // Görev silme
     public function destroy(Task $task)
@@ -116,10 +130,15 @@ class TaskController extends Controller
         // Sadece Operasyon Yoneticisi + aynı şirket (TaskPolicy@delete)
         $this->authorize('delete', $task);
 
+        $project = $task->project; // Silmeden önce projeyi değişkene al
         $task->delete();
 
+        if ($project) {
+            $project->updateProgress();
+        }
         return redirect()
             ->route('tasks.index')
             ->with('success', 'Görev başarıyla silindi!');
+
     }
 }

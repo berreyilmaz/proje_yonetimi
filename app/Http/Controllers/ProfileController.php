@@ -75,17 +75,19 @@ class ProfileController extends Controller
     /**
      * Kullanıcı düzenleme sayfası.
      */
+        // ProfileController.php içindeki metot
     public function editUser($id) 
     {
         $userToEdit = User::findOrFail($id);
-
-        // UserPolicy@update metoduna bakar (Parametre olarak modeli gönderiyoruz)
+        
+        // Yetki kontrolü (Policy'deki update metoduna bakar)
         Gate::authorize('update', $userToEdit);
 
-        $user = Auth::user(); // Sidebar/Layout için
+        $user = Auth::user(); 
         $roles = Role::pluck('name'); 
 
-        return view('users.edit', compact('userToEdit', 'user', 'roles'));
+        // View yolunun doğru olduğundan emin olun: resources/views/finans/edit.blade.php
+        return view('finans.edit', compact('userToEdit', 'user', 'roles'));
     }
 
     /**
@@ -103,6 +105,7 @@ class ProfileController extends Controller
             'email' => 'required|email|unique:users,email,' . $userToUpdate->id,
             'role'  => 'nullable|string|exists:roles,name',
             'password' => 'nullable|string|min:8',
+            
         ]);
 
         $userToUpdate->update([

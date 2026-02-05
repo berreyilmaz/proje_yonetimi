@@ -27,7 +27,7 @@
                 <p class="text-gray-400 mt-1">Operasyonel süreçleri ve iş atamalarını yönetin.</p>
             </div>
             
-            @can('görev.ekle')
+            @can('gorev.ekle')
             <a href="{{ route('tasks.create') }}" class="bg-purple-600 text-white px-6 py-3 rounded-2xl font-bold shadow-lg shadow-purple-200 hover:bg-purple-700 transition-all flex items-center gap-2">
                 <i class="fas fa-plus"></i> Yeni Görev Ekle
             </a>

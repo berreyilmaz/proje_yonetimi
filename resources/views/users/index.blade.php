@@ -12,15 +12,29 @@
     <div class="p-10">
         <div class="max-w-[1400px] mx-auto">
             
-            <div class="mb-10">
-                <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-[#6366f1] text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-[#4f46e5] transition-all font-bold text-sm mb-8">
-                    <i class="fas fa-arrow-left text-xs"></i>
-                    Ana Sayfaya Dön
-                </a>
+            <div class="mb-10 flex items-end">
+                <div>
+                    <a href="{{ route('dashboard') }}" class="inline-flex items-center gap-2 px-6 py-3 bg-[#6366f1] text-white rounded-2xl shadow-lg shadow-indigo-100 hover:bg-[#4f46e5] transition-all font-bold text-sm mb-8">
+                        <i class="fas fa-arrow-left text-xs"></i>
+                        Ana Sayfaya Dön
+                    </a>
 
-                <h1 class="text-4xl font-extrabold text-[#1A1C21] tracking-tight">Tüm Kullanıcılar</h1>
-                <p class="text-gray-400 mt-3 text-lg font-medium">Sistemdeki personellerin yetki ve bilgilerini yönetin.</p>
+                    <h1 class="text-4xl font-extrabold text-[#1A1C21] tracking-tight">Tüm Kullanıcılar</h1>
+                    <p class="text-gray-400 mt-3 text-lg font-medium">Sistemdeki personellerin yetki ve bilgilerini yönetin.</p>
+                </div>
+
+                <div class="ml-auto">
+                    @can('kullanici.ekle')
+                    <a href="{{ route('yenikullanici.create') }}" class="group inline-flex items-center gap-3 bg-purple-600 text-white px-8 py-4 rounded-[24px] font-bold shadow-xl shadow-purple-100 hover:bg-purple-700 hover:-translate-y-1 transition-all whitespace-nowrap">
+                        <div class="w-8 h-8 bg-white/20 rounded-xl flex items-center justify-center group-hover:rotate-90 transition-all duration-300">
+                            <i class="fas fa-plus text-sm"></i>
+                        </div>
+                        <span class="text-lg">Yeni Kullanıcı Ekle</span>
+                    </a>
+                    @endcan
+                </div>
             </div>
+
 
             <div class="bg-white rounded-[40px] shadow-sm border border-gray-50 overflow-hidden">
                 <div class="overflow-x-auto">

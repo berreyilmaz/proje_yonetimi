@@ -38,10 +38,10 @@ class PermissionSeeder extends Seeder
             'operasyon' => [
                 'operasyon.surec-yonetimi',
                 'operasyon.yonetim',
-                'görev.goruntule',
-                'görev.ekle',
-                'görev.duzenle',
-                'görev.sil',
+                'gorev.goruntule',
+                'gorev.ekle',
+                'gorev.duzenle',
+                'gorev.sil',
 
 
 
@@ -76,31 +76,36 @@ class PermissionSeeder extends Seeder
 
 
         // Şirket Yöneticisi: Her şeyi yapabilir
-        $companyOwner = Role::create(['name' => 'Sirket Yoneticisi']);
+        $companyOwner = Role::firstOrCreate(['name' => 'Sirket Yoneticisi']);
         $companyOwner->givePermissionTo([
-            'şirket.goruntule',
-            'şirket.duzenle',
-            'şirket.sil',
+            'gorev.goruntule',
+            'proje.goruntule',
+            'finans.goruntule',
+            'kullanici.liste',
+            'kullanici.ekle',
+            'kullanici.duzenle',
+            'kullanici.sil',
+
         ]);
 
-        $operationsManager = Role::create(['name' => 'Operasyon Yoneticisi']);
+        $operationsManager = Role::firstOrCreate(['name' => 'Operasyon Yoneticisi']);
         $operationsManager->givePermissionTo([
             'operasyon.surec-yonetimi',
             'operasyon.yonetim',
-            'görev.goruntule',
-            'görev.ekle',
-            'görev.duzenle',
-            'görev.sil',
+            'gorev.goruntule',
+            'gorev.ekle',
+            'gorev.duzenle',
+            'gorev.sil',
             'proje.goruntule',
         ]);
         
-        $projectManager = Role::create(['name' => 'Proje Yoneticisi']);
+        $projectManager = Role::firstOrCreate(['name' => 'Proje Yoneticisi']);
         $projectManager->givePermissionTo([
             'proje.goruntule',
             'proje.duzenle',
             ]);
             
-        $teamLead = Role::create(['name' => 'Takim Lideri']);
+        $teamLead = Role::firstOrCreate(['name' => 'Takim Lideri']);
         $teamLead->givePermissionTo([
             'proje.goruntule',
             'proje.duzenle',
@@ -109,19 +114,20 @@ class PermissionSeeder extends Seeder
             ]);
                 
         // Personel: Sadece projeleri görebilir ve görev yönetebilir
-        $employee = Role::create(['name' => 'Personel']);
+        $employee = Role::firstOrCreate(['name' => 'Personel']);
         $employee->givePermissionTo([
             'proje.goruntule',
-            'görev.goruntule',
+            'gorev.goruntule',
         ]);
-        $financeOfficer = Role::create(['name' => 'Finans Gorevlisi']);;
+        $financeOfficer = Role::firstOrCreate(['name' => 'Finans Gorevlisi']);;
         $financeOfficer->givePermissionTo([
+            'proje.goruntule',
             'finans.goruntule',
             'finans.muhasebe',
             'finans.fatura-yonetimi',
         ]); 
 
-        $client = Role::create(['name' => 'Musteri']);
+        $client = Role::firstOrCreate(['name' => 'Musteri']);
         $client->givePermissionTo([
             'proje.goruntule',
             'fatura.goruntule',

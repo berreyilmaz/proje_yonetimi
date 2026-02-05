@@ -44,8 +44,8 @@ class ProjectPolicy
             ->where('role', 'manager')
             ->exists();
 
-            return $user->company_id === $project->company_id
-                && $user->hasProjectAbility($project, 'project.update   ');
+            return ($user->hasRole(['Takim Lideri', 'Sirket Yoneticisi'])) 
+                && $user->company_id === $project->company_id;
     }
 
     /**

@@ -60,21 +60,17 @@
                 <span class="font-medium">Kullanıcılar</span>
             </a>
             @endrole
+            <a href="{{ route('operations.index') }}" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
+                <i class="fas fa-users w-5"></i> 
+                <span class="font-medium">Operasyon Merkezi</span>
+            </a>
+            <a href="{{ route('report.index', $continuingProjects->first()->id ?? 1) }}" class="flex items-center gap-4 p-4 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-2xl transition-all">
+                <i class="fas fa-file-alt w-5"></i> 
+                <span class="font-medium">Stratejik Rapor</span>
+            </a>
         </nav>
 
-        @role('Sirket Yoneticisi')
-        <div class="mt-auto pt-10">
-            <a href="{{ route('yenikullanici.create') }}" 
-            class="flex items-center gap-1 p-4 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-2xl transition-all group">
-                
-                <div class="w-10 h-10 bg-green-100 text-green-600 rounded-xl flex items-center justify-center group-hover:bg-green-600 group-hover:text-white transition-all">
-                    <i class="fas fa-user-plus"></i>
-                </div>
-
-                <span class="font-semibold">Yeni Kullanıcı Ekle</span>
-            </a>
-        </div>
-        @endrole
+        
         <div class="mt-auto pt-10">
             <a href="#" 
             onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
@@ -152,6 +148,7 @@
         </div>
     <div class="flex justify-between items-center mb-6">
         <h3 class="text-2xl font-bold text-gray-800">Son Projeler</h3>
+        
         <a href="{{ route('projects.index') }}" class="text-purple-600 font-bold text-sm hover:underline">Hepsini Gör</a>
     </div>
 

@@ -1,13 +1,11 @@
 <?php
 
-
+namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
-use App\Models\Project;
-use App\Models\User;
 use App\Http\Controllers\TaskController;
 use App\Http\Controllers\FinansController;
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -15,6 +13,8 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\CalendarController;
+use App\Http\Controllers\OperationController;
+use App\Http\Controllers\ReportController;
 
 
 /*
@@ -81,6 +81,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tasks', [TaskController::class, 'store'])->name('tasks.store');
     Route::get('/tasks/{task}/edit', [TaskController::class, 'edit'])->name('tasks.edit');
     Route::put('/tasks/{task}', [TaskController::class, 'update'])->name('tasks.update');
+    Route::get('/tasks/{task}', [TaskController::class, 'show'])->name('tasks.show');
     Route::delete('/tasks/{task}', [TaskController::class, 'destroy'])->name('tasks.destroy');
 });
 
@@ -93,6 +94,7 @@ Route::middleware(['auth', RoleMiddleware::class . ':Finans Gorevlisi'])->group(
     Route::get('/finans/create', [FinansController::class, 'create'])->name('finans.create');
     Route::post('/finans', [FinansController::class, 'store'])->name('finans.store');
     Route::get('/finans/{user}', [FinansController::class, 'show'])->name('finans.show');
+    
 });
 
 // 2. Şirket Yöneticisi Rotaları (Kullanıcı Yönetimi)
@@ -135,3 +137,34 @@ Route::middleware(['auth'])->group(function () {
 
 Route::get('/calendar', [CalendarController::class, 'index'])->name('calendar.index');
 Route::post('/calendar/event', [CalendarController::class, 'store'])->name('calendar.store');
+
+Route::middleware(['auth'])->group(function () {
+    // Operasyon Merkezi Sayfası
+    Route::get('/operations', [OperationController::class, 'index'])->name('operations.index');
+    
+    // Yeni Operasyon Oluşturma Sayfası
+    Route::get('/operations/create', [OperationController::class, 'create'])->name('operations.create');
+    
+    // Veriyi Veritabanına Kaydetme
+    Route::post('/operations', [OperationController::class, 'store'])->name('operations.store');
+    Route::post('/operations/{operation}/approve', [OperationController::class, 'approve'])->name('operations.approve');
+    Route::post('/operations/{operation}/reject', [OperationController::class, 'reject'])->name('operations.reject');
+});
+
+
+Route::get('/finans/proje/{project}', [FinansController::class, 'projectDetails'])
+    ->name('finans.project.details');
+
+
+
+
+Route::get('/raporlar/proje/{project}', [ReportController::class, 'index'])
+    ->name('report.index');
+
+
+Route::post('/projects/update-batch-budget', [FinansController::class, 'updateBatchBudget'])
+    ->name('projects.updateBatchBudget')
+    ->middleware(['auth']);
+
+// ProfileController@editUser metoduna giden rota
+Route::put('/finans/user/{user}', [FinansController::class, 'updateUser'])->name('finans.update');

@@ -24,6 +24,10 @@ class User extends Authenticatable
         'email',
         'password',
         'company_id',
+        'base_salary',
+        'overtime_rate',
+        'monthly_limit_hours',
+        'weekly_work_hours',
     ];
 
     /**
@@ -86,8 +90,11 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\Task::class, 'assigned_to');
     }
 
+
+
     public function finansPayments()
     {
-        return $this->hasMany(\App\Models\Finans::class);
+        return $this->hasMany(FinancialTransaction::class, 'reference_id')
+                    ->where('reference_type', 'App\Models\User'); 
     }
 }

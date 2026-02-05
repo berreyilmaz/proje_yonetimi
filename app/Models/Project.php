@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Spatie\Permission\Traits\HasRoles;
+use App\Models\FinancialTransaction;
+
 
 class Project extends Model
 {
@@ -27,13 +29,53 @@ class Project extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'project_user_roles')
+        return $this->belongsToMany(User::class, 'project_user_roles', 'project_id', 'user_id')
                     ->withPivot('role')
                     ->withTimestamps();
     }
 
     public function tasks()
     {
-        return $this->hasMany(\App\Models\Task::class);
+        return $this->hasMany(Task::class);
+    }
+
+
+
+    public function updateProgress()
+    {
+        // Proje ID'sine göre görevleri direkt veritabanından say
+        $total = \App\Models\Task::where('project_id', $this->id)->count();
+
+        if ($total == 0) {
+            $this->progress = 0;
+            $this->save();
+            return 0;
+        }
+
+        // Durumu 'tamamlandi' olanları direkt veritabanından say
+        $completed = \App\Models\Task::where('project_id', $this->id)
+            ->where('status', 'tamamlandi')
+            ->count();
+
+        $percentage = round(($completed / $total) * 100);
+
+        // Veritabanına kaydet
+        $this->progress = $percentage;
+        $this->save();
+
+        return $percentage;
+    }
+
+    public function financialTransactions()
+    {
+        return $this->hasMany(FinancialTransaction::class);
+    }
+
+    // Projenin anlık kar/zarar durumunu hesaplayan metod
+    public function getFinancialBalanceAttribute()
+    {
+        $income = $this->financialTransactions()->where('type', 'income')->sum('amount');
+        $expense = $this->financialTransactions()->where('type', 'expense')->sum('amount');
+        return $income - $expense;
     }
 }

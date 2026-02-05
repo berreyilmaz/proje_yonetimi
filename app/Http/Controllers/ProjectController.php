@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests; // 1. Bunu ekle
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Gate;
-use Spatie\Permission\Models\Role;
+use Spatie\Permission\Traits\HasRoles;
 
 
 class ProjectController extends Controller
@@ -18,72 +18,56 @@ class ProjectController extends Controller
 
 
     public function index()
-    {
-        // 1. Kullanıcı kontrolü
-        $user = Auth::user();
-        if (!$user) {
-            return redirect()->route('login');
+{
+    /** @var \App\Models\User $user */
+    $user = Auth::user();
+    if (!$user) return redirect()->route('login');
+
+    $companyId = $user->company_id;
+    
+    // Küçük/büyük harf duyarlılığını kaldırmak için role isimlerini kontrol et
+    $isRestricted = !$user->hasAnyRole(['Admin', 'admin', 'Operasyon Yoneticisi', 'operasyon_yoneticisi']);
+
+    // 1. Kullanıcının dahil olduğu projelerin ID'lerini önceden alalım (En garantisi budur)
+    $myProjectIds = \App\Models\ProjectUserRole::where('user_id', $user->id)
+        ->pluck('project_id')
+        ->toArray();
+
+    // 2. Filtreleme Fonksiyonu
+    $applyRestrictions = function($query) use ($companyId, $isRestricted, $user, $myProjectIds) {
+        $query->where('company_id', $companyId);
+        
+        if ($isRestricted) {
+            $query->where(function($q) use ($user, $myProjectIds) {
+                $q->where('project_manager_id', $user->id) // Yönetici olduğu projeler
+                  ->orWhereIn('id', $myProjectIds);        // Üye olduğu projeler
+            });
         }
+        return $query;
+    };
 
-        // 2. Yetki Kontrolü (İsteğe bağlı)
-        // Eğer paneli sadece belirli yetkisi olanlar görecekse aşağıdaki satırı açabilirsin:
-        // $this->authorize('proje görüntüle');
+    // 3. Verileri Çek
+    $completedProjectsCount = $applyRestrictions(Project::query())->where('status', 'tamamlandi')->count();
+    $continuingProjectsCount = $applyRestrictions(Project::query())->where('status', 'devam_ediyor')->count();
+    $continuingProjects = $applyRestrictions(Project::query())->where('status', 'devam_ediyor')->latest()->take(2)->get();
 
-        $companyId = $user->company_id;
+    // Diğer veriler aynı...
+    $teamMembers = User::where('company_id', $companyId)->take(5)->get();
+    $teamCount = User::where('company_id', $companyId)->count();
+    $personalHours = intdiv((int)$user->weekly_work_hours, 3600) . ' sa ' . intdiv(((int)$user->weekly_work_hours % 3600), 60) . ' dk';
+    $currentDate = now();
+    $startOfWeek = now()->startOfWeek();
 
-        // 3. İstatistikler (Sadece kullanıcının kendi şirketine ait veriler)
-        $completedProjectsCount = Project::where('company_id', $companyId)
-            ->where('status', 'tamamlandi')
-            ->count();
-
-        $continuingProjectsCount = Project::where('company_id', $companyId)
-            ->where('status', 'devam_ediyor')
-            ->count();
-
-        // 4. Devam Eden Projeler (Dashboard'daki görev kartları için)
-        $continuingProjects = Project::where('company_id', $companyId)
-            ->where('status', 'devam_ediyor')
-            ->latest()   // created_at desc
-            ->take(2)
-            ->get();
-
-        // 5. Ekip Üyeleri (Sadece aynı şirkettekiler)
-        $teamMembers = User::where('company_id', $companyId)
-            ->take(5) // Blade içinde take(2) yapıyorduk, güvenli olması için 5 tane çekiyoruz
-            ->get();
-
-        $teamCount = User::where('company_id', $companyId)->count();
-
-        // 6. Blade'in beklediği ek değişkenler (Hata veren kısımlar)
-        // Kullanıcının bu haftaki toplam saniyesi
-        $seconds = (int) $user->weekly_work_hours;
-
-        $hours = intdiv($seconds, 3600);
-        $minutes = intdiv($seconds % 3600, 60);
-
-        // Örn: "5 sa 30 dk"
-        $personalHours = $hours . ' sa ' . $minutes . ' dk'; 
-        $currentDate = now();
-        $startOfWeek = now()->startOfWeek();
-
-        // 7. Verileri View'a gönder
-        return view('index', compact(
-            'continuingProjects',
-            'completedProjectsCount',
-            'continuingProjectsCount',
-            'teamMembers',
-            'teamCount',
-            'personalHours',
-            'currentDate',
-            'startOfWeek',
-        ));
-    }
+    return view('index', compact('continuingProjects','completedProjectsCount','continuingProjectsCount','teamMembers','teamCount','personalHours','currentDate','startOfWeek'));
+}
 
     public function destroy(Project $project)
     {
-        Gate::authorize('delete', Project::class); // Gate üzerinden kontrol
+        $this->authorize('delete', $project); 
+
         $project->delete();
-        return back();
+
+        return redirect()->route('projects.index')->with('success', 'Proje silindi.');
     }
 
     public function list()
@@ -125,6 +109,7 @@ class ProjectController extends Controller
             'progress'=> 'nullable|integer|min:0|max:100',
             'end_date'=> 'nullable|date',
             'project_manager_id' => 'nullable|exists:users,id',
+            'members' => 'nullable|array',
         ]);
 
         $statusMap = [
@@ -137,8 +122,29 @@ class ProjectController extends Controller
         $validated['start_date'] = now();
         $validated['project_manager_id'] = $request->project_manager_id;
 
+        // --- KRİTİK DÜZELTME BAŞLANGICI ---
+        // 'members' verisini ana tabloya kaydetmeye çalışmasın diye diziden çıkarıyoruz
+        $selectedMembers = $validated['members'] ?? []; // Üyeleri bir değişkene al
+        unset($validated['members']); // Validated dizisinden temizle (Hata veren kısım burasıydı)
+        // --- KRİTİK DÜZELTME BİTİŞİ ---
+
         // SADECE BİR KEZ OLUŞTUR
         $project = Project::create($validated);
+
+        // SEÇİLEN ÜYELERİ EKLE
+        if (!empty($selectedMembers)) {
+            foreach ($selectedMembers as $userId) {
+                \App\Models\ProjectUserRole::updateOrCreate(
+                    [
+                        'project_id' => $project->id,
+                        'user_id'    => $userId,
+                    ],
+                    [
+                        'role'       => 'member',
+                    ]
+                );
+            }
+        }
 
         // Proje bazlı manager rolü ata
         if ($request->filled('project_manager_id')) {
@@ -155,7 +161,7 @@ class ProjectController extends Controller
 
         return redirect()
             ->route('projects.index')
-            ->with('success', 'Proje başarıyla oluşturuldu');
+            ->with('success', 'Proje ve ekip başarıyla oluşturuldu');
     }
 
     public function edit(Project $project)
@@ -165,44 +171,74 @@ class ProjectController extends Controller
 
         $employees = User::where('company_id', $user->company_id)->get();
 
-        return view('projects.edit', compact('project', 'user', 'employees'));
+        // BOZMADAN DÜZELTİLEN KISIM: 
+        // Projenin üyelerini direkt olarak senin kullandığın ProjectUserRole tablosundan çekiyoruz.
+        // Böylece modeldeki ilişki hatalı olsa bile üyeler kesin gelir.
+        $currentMembers = \App\Models\ProjectUserRole::where('project_id', $project->id)
+            ->pluck('user_id')
+            ->toArray();
+
+        return view('projects.edit', compact('project', 'user', 'employees', 'currentMembers'));
     }
     public function update(Request $request, Project $project)
     {
+        // 1. Yetki Kontrolü
         Gate::authorize('update', $project);
+
+        // 2. Doğrulama (Progress alanını nullable yaptık ki hata vermesin)
         $validated = $request->validate([
             'title'   => 'required|max:255',
             'status'  => 'required',
-            'progress'=> 'required|integer|min:0|max:100',
+            'progress'=> 'nullable|integer|min:0|max:100',
             'end_date'=> 'nullable|date',
             'project_manager_id' => 'nullable|exists:users,id',
+            'members' => 'nullable|array',
         ]);
-        
+
+        // 3. Durum Dönüştürme
         $statusMap = [
             'continuing' => 'devam_ediyor',
             'completed'  => 'tamamlandi'
         ];
-        $validated['status'] = $statusMap[$request->status] ?? $request->status;
-        $validated['project_manager_id'] = $request->project_manager_id;
         
-        $project->update($validated);
+        // Verileri hazırla (members'ı ana tablodan ayır)
+        $data = $validated;
+        $memberIds = $request->input('members', []);
+        $managerId = $request->project_manager_id;
+        unset($data['members']); 
+        
+        $data['status'] = $statusMap[$request->status] ?? $request->status;
 
-        \App\Models\ProjectUserRole::where('project_id', $project->id)
-        ->where('role', 'manager')
-        ->delete();
+        // 4. Proje Ana Tablosunu Güncelle
+        $project->update($data);
 
-        if ($request->filled('project_manager_id')) {
-            \App\Models\ProjectUserRole::updateOrCreate(
-                [
-                    'project_id' => $project->id,
-                    'user_id'    => $request->project_manager_id,
-                ],
-                [
-                    'role'       => 'manager',
-                ]
-            );
+        // 5. Roller Tablosundaki Eski Kayıtları Sil (Temiz bir sayfa)
+        \App\Models\ProjectUserRole::where('project_id', $project->id)->delete();
+
+        // 6. Üyeleri Kaydet (Duplicate Hatasını Önleyen Mantık)
+        foreach ($memberIds as $userId) {
+            // EĞER BU KULLANICI AYNI ZAMANDA YÖNETİCİYSE ÜYE OLARAK EKLEME (Aşağıda Manager olarak eklenecek)
+            if ($userId == $managerId) {
+                continue;
+            }
+
+            \App\Models\ProjectUserRole::create([
+                'project_id' => $project->id,
+                'user_id'    => $userId,
+                'role'       => 'member'
+            ]);
         }
-        return redirect()->route('projects.index')->with('success', 'Proje başarıyla güncellendi.');
+
+        // 7. Yöneticiyi Kaydet
+        if ($managerId) {
+            \App\Models\ProjectUserRole::create([
+                'project_id' => $project->id,
+                'user_id'    => $managerId,
+                'role'       => 'manager'
+            ]);
+        }
+
+        return redirect()->route('projects.index')->with('success', 'Proje ve ekip başarıyla güncellendi.');
     }
 
         public function show(Project $project)

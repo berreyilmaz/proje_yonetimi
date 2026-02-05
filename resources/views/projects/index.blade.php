@@ -54,12 +54,14 @@
                                 {{ $project->status == 'completed' ? 'Tamamlandı' : 'Devam Ediyor' }}
                             </span>
                         </td>
-                        <td class="p-6">
+                        <td class="px-12 py-7">
                             <div class="flex items-center gap-3">
-                                <div class="w-24 bg-gray-100 rounded-full h-1.5">
-                                    <div class="bg-purple-600 h-1.5 rounded-full" style="width: {{ $project->progress }}%"></div>
+                                <div class="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden min-w-[150px]">
+                                    <div class="h-full bg-[#6366f1] rounded-full transition-all duration-500" 
+                                        style="--progress-width: {{ $project->progress ?? 0 }}%; width: var(--progress-width);">
+                                    </div>
                                 </div>
-                                <span class="text-xs font-bold text-gray-500">%{{ $project->progress }}</span>
+                                <span class="text-sm font-bold text-gray-500">%{{ $project->progress }}</span>
                             </div>
                         </td>
                         <td class="p-6">

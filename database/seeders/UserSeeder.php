@@ -110,9 +110,9 @@ class UserSeeder extends Seeder
 
         // --- GLOBAL ADMIN ---
         $admin = User::create([
-            'name' => 'Murat Sistem',
+            'name' => 'Yazılım Sistem',
             'email' => 'admin@sistem.com',
-            'password' => Hash::make('sistem999'), // Özel Şifre
+            'password' => Hash::make('123'), // Özel Şifre
             'company_id' => $companies[0]->id
         ]);
         $admin->assignRole('Super Admin');
